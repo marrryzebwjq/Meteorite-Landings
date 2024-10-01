@@ -6,4 +6,5 @@
 - [**Lucas Vaugrente**](https://gitlab.univ-nantes.fr/E247662Y)
 
 ## Dataset
-Météorites
+- 34 513 météorites tombées
+- Données publiées par la NASA (NASA's Open Data Portal)

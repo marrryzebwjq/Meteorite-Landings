@@ -1,0 +1,68 @@
+QUERY 1
+(Centrales électriques) Nombre de centrales et météorites par pays
+
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX ns2: <https://dbpedia.org/ontology/>
+PREFIX schema: <https://schema.org/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?countryLabel (xsd:string(?meteoriteCount) AS ?meteorites) (xsd:string(?plantCount) AS ?powerPlants)
+WHERE {
+  {
+    SELECT ?country (COUNT(?meteorite) AS ?meteoriteCount)
+    WHERE {
+      SERVICE <http://localhost:3030/meteorites> {
+        ?meteorite ns2:country ?country .
+      }
+    }
+    GROUP BY ?country
+  }
+ OPTIONAL {
+ SELECT ?country (COUNT(?plant) AS ?plantCount)
+ WHERE {
+   SERVICE <http://localhost:3030/powerplants> {
+     ?plant dbo:country ?country .
+   }
+ }
+ GROUP BY ?country
+ }
+ BIND(REPLACE(STR(?country), "http://dbpedia.org/resource/", "") AS ?countryLabel)
+}
+ORDER BY DESC(?meteorites)
+
+---------------------------------------------------------------------------------
+QUERY 2
+(Aéroports) Aéroports proches des chutes de météorites (~50km)
+
+PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+PREFIX ns1: <https://www.geonames.org/ontology#>
+PREFIX schema: <https://schema.org/>
+PREFIX nas: <https://data.nasa.gov/ontologies/atmonto/NAS#>
+PREFIX swportal: <http://sw-portal.deri.org/ontologies/swportal#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?meteoriteName (REPLACE(STR(?city), "http://fr.dbpedia.org/resource/", "") AS ?cityLabel)
+       (REPLACE(STR(?country), "http://fr.dbpedia.org/resource/", "") AS ?countryLabel)
+WHERE {
+  SERVICE <http://localhost:3030/meteorites> {
+    ?meteorite schema:name ?meteoriteName ;
+               ns1:latitude ?rawMeteoriteLat ;
+               ns1:longitude ?rawMeteoriteLong .
+
+    BIND(xsd:float(?rawMeteoriteLat) AS ?meteoriteLat)
+    BIND(xsd:float(?rawMeteoriteLong) AS ?meteoriteLong)
+  }
+
+  SERVICE <http://localhost:3030/airports> {
+    ?airport swportal:inCity ?city ;
+             swportal:inCountry ?country ;
+             geo:lat ?rawAirportLat ;
+             geo:long ?rawAirportLong .
+
+    BIND(xsd:float(?rawAirportLat) AS ?airportLat)
+    BIND(xsd:float(?rawAirportLong) AS ?airportLong)
+  }
+
+}
+ORDER BY ?meteoriteName
+LIMIT 50

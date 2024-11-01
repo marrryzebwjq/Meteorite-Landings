@@ -1,0 +1,29 @@
+QUERY 1 (10 météorites avec les plus grandes masses)
+
+PREFIX schema: <https://schema.org/>
+PREFIX ex: <https://example.org/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?name (STR(?weight) AS ?mass)
+WHERE {
+       ?meteorite schema:name ?name ;
+                          schema:weight ?weight .
+}
+ORDER BY DESC(?weight)
+LIMIT 10
+
+---------------------------------------------------------------------------------
+QUERY 2 (la plus grosse météorite de 2003)
+
+PREFIX schema: <https://schema.org/>
+PREFIX ex: <https://example.org/>
+
+SELECT ?name (STR(?weight) AS ?mass)
+WHERE {
+       ?meteorite schema:year ?year ;
+                           schema:name ?name ;
+                           schema:weight ?weight .
+       FILTER(STR(?year) = "2003.0")
+}
+ORDER BY DESC(?weight)
+LIMIT 1

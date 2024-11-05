@@ -32,37 +32,30 @@ ORDER BY DESC(?meteorites)
 
 ---------------------------------------------------------------------------------
 QUERY 2
-(Aéroports) Aéroports proches des chutes de météorites (~50km)
+(Aéroports) Les 10 météorites les plus lourdes tombées après 2000 dans les mêmes pays que les aéroports actifs
 
-PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
-PREFIX ns1: <https://www.geonames.org/ontology#>
-PREFIX schema: <https://schema.org/>
-PREFIX nas: <https://data.nasa.gov/ontologies/atmonto/NAS#>
-PREFIX swportal: <http://sw-portal.deri.org/ontologies/swportal#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX ns2: <https://dbpedia.org/ontology/>
+PREFIX schema: <https://schema.org/>
+PREFIX swportal: <http://sw-portal.deri.org/ontologies/swportal#>
 
-SELECT ?meteoriteName (REPLACE(STR(?city), "http://fr.dbpedia.org/resource/", "") AS ?cityLabel)
-       (REPLACE(STR(?country), "http://fr.dbpedia.org/resource/", "") AS ?countryLabel)
+SELECT ?meteoriteName (STR(?fallYear) AS ?fallYearStr) ?countryLabel (STR(?meteoriteMass) AS ?meteoriteMassStr)
 WHERE {
-  SERVICE <http://localhost:3030/meteorites> {
+  SERVICE <http://localhost:3030/meteorites_fall> {
     ?meteorite schema:name ?meteoriteName ;
-               ns1:latitude ?rawMeteoriteLat ;
-               ns1:longitude ?rawMeteoriteLong .
-
-    BIND(xsd:float(?rawMeteoriteLat) AS ?meteoriteLat)
-    BIND(xsd:float(?rawMeteoriteLong) AS ?meteoriteLong)
+               schema:year ?fallYear ;
+               schema:weight ?meteoriteMass ;
+               ns2:country ?country .
+    FILTER(?fallYear >= "2000"^^xsd:gYear)
   }
 
   SERVICE <http://localhost:3030/airports> {
-    ?airport swportal:inCity ?city ;
-             swportal:inCountry ?country ;
-             geo:lat ?rawAirportLat ;
-             geo:long ?rawAirportLong .
-
-    BIND(xsd:float(?rawAirportLat) AS ?airportLat)
-    BIND(xsd:float(?rawAirportLong) AS ?airportLong)
+    ?airport swportal:inCountry ?countryAirport .
+    BIND(IRI(REPLACE(STR(?countryAirport), "^http://fr.dbpedia.org/", "http://dbpedia.org/")) AS ?country)
   }
 
+  BIND(REPLACE(STR(?country), "http://dbpedia.org/resource/", "") AS ?countryLabel)
 }
-ORDER BY ?meteoriteName
-LIMIT 50
+GROUP BY ?meteoriteName ?fallYear ?countryLabel ?meteoriteMass
+ORDER BY DESC(?meteoriteMass)
+LIMIT 10
